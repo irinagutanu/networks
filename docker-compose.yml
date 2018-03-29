@@ -2,26 +2,63 @@ version: '2.1'
 
 services:
     rt1:
-        image: baseimage:latest
+        image: tema1
         volumes:
             - .:/elocal
         tty: true
+        command: tcpdump -nSt icmp
         networks:
-            - dmz
+            - tnet2
     rt2:
-        image: baseimage:latest
+        image: tema1
         volumes:
             - .:/elocal
         tty: true
+        command: ping -s 4000 rt1
+        depends_on:
+            - rt1
         networks:
-            - dmz
+            - tnet2
     rt3:
-        image: baseimage:latest
+        image: tema1
         volumes:
             - .:/elocal
         tty: true
+        command: ping rt1
+        depends_on: 
+            - rt1
+        sysctls:
+            - net.ipv4.icmp_echo_ignore_all=1
         networks:
-            - dmz
-
+            - tnet2
+    rt4: 
+        image: tema1
+        volumes: 
+            - .:/elocal
+        tty: true
+        command: ping -c 1 rt3
+        depends_on:
+            - rt3
+        networks: 
+            - tnet2
+    tn1:
+        image: baseimage:latest
+        volumes: 
+            - .:/elocal
+        tty: true
+        command: bash -c 'echo \"- interfetele de retea:\" && ip addr && echo \"- gateway:\" && ip route show'
+        networks:
+            - tnet1
 networks:
-    dmz: {}
+    tnet1: 
+        ipam:
+            driver: default
+            config:
+                - subnet: 174.200.111.0/16
+                  gateway: 174.200.111.0
+    tnet2:
+        ipam:
+            driver: default
+            config: 
+                - subnet: 1.2.3.4/8
+                  gateway: 1.2.3.4
